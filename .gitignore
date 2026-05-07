@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Secrets / env
+.env
+.env.local
+.env.*.local
+
+# Node (if any tooling later)
+node_modules/
+
+# Python (if any tooling later)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS / temp
+Thumbs.db
+*.tmp

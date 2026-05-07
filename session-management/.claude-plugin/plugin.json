@@ -1,0 +1,13 @@
+{
+  "name": "session-management",
+  "version": "0.1.0",
+  "description": "세션 시작/종료 시 자동으로 핸드오프·메모리·git·PLANS 상태를 정리하는 짝 스킬",
+  "author": {
+    "name": "ageofsys",
+    "email": "ageofsys@gmail.com"
+  },
+  "homepage": "https://github.com/ageofsys/claude-plugins/tree/main/session-management",
+  "repository": "https://github.com/ageofsys/claude-plugins",
+  "license": "MIT",
+  "keywords": ["session", "handoff", "memory", "git", "wrap-up", "warm-up"]
+}

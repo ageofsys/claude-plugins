@@ -1,0 +1,20 @@
+{
+  "name": "ageofsys-plugins",
+  "owner": {
+    "name": "ageofsys",
+    "email": "ageofsys@gmail.com",
+    "url": "https://github.com/ageofsys"
+  },
+  "plugins": [
+    {
+      "name": "session-management",
+      "source": "./session-management",
+      "description": "세션 시작/종료 시 자동으로 핸드오프·메모리·git·PLANS 상태를 정리하는 짝 스킬",
+      "version": "0.1.0",
+      "author": {
+        "name": "ageofsys",
+        "email": "ageofsys@gmail.com"
+      }
+    }
+  ]
+}
