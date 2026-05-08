@@ -11,12 +11,12 @@
 
 ## 트리거
 
-| 스킬 | 트리거 표현 (예) |
-|---|---|
-| `session-start` | "세션 시작", "이어서 가자", "어디까지 했더라", "where did we leave off" |
-| `session-end` | "세션 종료", "세션 마무리", "오늘은 여기까지", "wrap up the session" |
+| 스킬 | 명확 트리거 | 모호 트리거 (확인 후 진입) |
+|---|---|---|
+| `session-start` | "세션 시작", "오늘 세션 시작", "이전 세션 이어서", "어디까지 했더라", "start session", "where did we leave off", "pick up where we left off" | ⚠️ "이어서 가자" — 직전에 활성 작업 컨텍스트가 있을 때 단일 확인 질문 후 진입 |
+| `session-end` | "세션 종료", "세션 마무리", "세션 끝", "wrap up the session", "end session", "let's wrap up" | ⚠️ "오늘은 여기까지" — 진행 중 작업의 정리 신호가 없을 때 단일 확인 질문 후 진입 |
 
-자세한 트리거 조건은 각 SKILL.md 파일의 `description` 프론트매터 참고.
+광범위한 표현("시작하자", "정리해줘") 단독으로는 트리거하지 않는다. 자세한 조건과 컨텍스트 가드 규칙은 각 SKILL.md 의 `description` 프론트매터와 `트리거 후 컨텍스트 가드` 섹션 참고.
 
 ## 메모리 저장 위치 가정
 

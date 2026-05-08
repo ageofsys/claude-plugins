@@ -1,6 +1,6 @@
 ---
 name: session-start
-description: Use this skill whenever the user signals the start of a working session — explicit phrases like "세션 시작", "세션 시작한다", "오늘 세션 시작", "이어서 가자", "어디까지 했더라", "이전 세션 이어서", "start session", "let's start the session", "where did we leave off", "pick up where we left off", or any clearly equivalent wording. Performs a structured warm-up — loads MEMORY.md and the latest handoff note, checks git/branch state and uncommitted leftovers, surfaces the next plan from PLANS-INDEX, verifies local infra/background processes, and presents a one-screen briefing of where to start. Mirror counterpart of the session-end skill. Degrades gracefully when memory/plans/handoff files don't exist — only runs the steps that apply. Do not trigger on vague phrases like "시작하자" alone — requires explicit *session-level* start intent.
+description: Use this skill whenever the user signals the start of a working session — explicit phrases like "세션 시작", "세션 시작한다", "오늘 세션 시작", "어디까지 했더라", "이전 세션 이어서", "start session", "let's start the session", "where did we leave off", "pick up where we left off", or any clearly equivalent wording. Performs a structured warm-up — loads MEMORY.md and the latest handoff note, checks git/branch state and uncommitted leftovers, surfaces the next plan from PLANS-INDEX, verifies local infra/background processes, and presents a one-screen briefing of where to start. Mirror counterpart of the session-end skill. Degrades gracefully when memory/plans/handoff files don't exist — only runs the steps that apply. Do not trigger on vague phrases like "시작하자" alone — requires explicit *session-level* start intent. Ambiguous phrases like "이어서 가자" (could mean session-resume OR continuing a current task) trigger the skill but require a single confirm question before running the warm-up — see `트리거 후 컨텍스트 가드` section.
 ---
 
 # Session-start Warm-up
@@ -14,6 +14,25 @@ description: Use this skill whenever the user signals the start of a working ses
 - **읽기 → 종합 → 제시 → 사용자 확인 → 작업 진입** 순서. 자동으로 코드를 수정하거나 빌드를 돌리지 않는다 — warm-up 은 *상태 복원* 까지만.
 - **존재하지 않는 파일/구조는 스킵.** 핸드오프 노트가 없으면 그렇게 보고하고, 메모리만으로 시작점을 추론한다. 강제 생성 금지.
 - 사용자가 명시한 다른 작업 의도가 있으면 (예: "세션 시작하고 P14 부터") 그 의도를 우선하되, 1~3 단계 요약은 그래도 보여준다 — 컨텍스트가 누락된 채 작업에 들어가면 다음 어긋남이 생긴다.
+
+## 트리거 후 컨텍스트 가드 (over-action 방지)
+
+트리거 표현 일부는 *세션 단위 시작* 의도가 아니라 *현재 작업의 연속*을 가리킬 수 있다. warm-up 6단계는 git/메모리/PLANS를 모두 읽기 때문에, 의도가 어긋난 채 진입하면 사용자가 보고 싶어 하지 않은 정보를 한 화면 던지게 된다.
+
+### 모호 트리거 매핑
+
+| 트리거 | 명확한 세션 시작 | 모호 — 확인 필요 |
+|---|---|---|
+| "세션 시작", "오늘 세션 시작", "이전 세션 이어서", "start session", "where did we leave off", "pick up where we left off" | ✅ 즉시 진입 | — |
+| "어디까지 했더라" | ✅ 진입 (직전 작업의 메타 질문) | — |
+| **"이어서 가자"** | — | ⚠️ 직전 발화에 *다른 작업 컨텍스트* (예: 코드 변경 직후, 빌드 진행 중)가 있으면 **단일 확인 질문 후 진입**: "이전 세션 이어서 시작할까요? (warm-up 진행) / 지금 작업 계속할까요?" |
+
+### 운영 규칙
+
+- 명확한 표현 → 6단계 즉시 진입.
+- 모호 표현이고 **직전 대화에 활성 작업 컨텍스트가 있으면** → 한 줄 확인 질문 후 사용자가 session-resume 의사를 밝힐 때만 진입. 자동 진입 금지.
+- 직전 대화가 비어 있거나 첫 발화이면 → 모호 표현이라도 즉시 진입 (다른 해석이 없음).
+- 확인 질문은 **한 번만**. 사용자가 "지금 작업 계속" 고르면 skill 종료.
 
 ## 6 단계 절차
 

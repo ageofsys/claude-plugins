@@ -1,6 +1,6 @@
 ---
 name: session-end
-description: Use this skill whenever the user signals the end of a working session — explicit phrases like "세션 종료", "세션 종료한다", "세션 마무리", "세션 끝", "오늘은 여기까지", "wrap up the session", "end session", "let's wrap up", or any clearly equivalent wording. Performs a structured wrap-up — uncommitted changes review with commit suggestions, capture of new decisions/issues into the project memory, PLANS-INDEX progress sync, handoff note for the next session, cleanup of background processes and temporary cloud resources, MEMORY.md index refresh, and session name recommendation (so the session is searchable in the future). Do not skip this skill even when the session feels small; missed handoffs cost more than the few minutes of structured wrap-up. If memory or plans files for this project don't exist yet, the skill degrades gracefully — only running the steps that apply.
+description: Use this skill whenever the user signals the end of a working session — explicit phrases like "세션 종료", "세션 종료한다", "세션 마무리", "세션 끝", "wrap up the session", "end session", "let's wrap up", or any clearly equivalent wording. Performs a structured wrap-up — uncommitted changes review with commit suggestions, capture of new decisions/issues into the project memory, PLANS-INDEX progress sync, handoff note for the next session, cleanup of background processes and temporary cloud resources, MEMORY.md index refresh, and session name recommendation (so the session is searchable in the future). Do not skip this skill even when the session feels small; missed handoffs cost more than the few minutes of structured wrap-up. If memory or plans files for this project don't exist yet, the skill degrades gracefully — only running the steps that apply. Ambiguous phrases like "오늘은 여기까지" (could mean true session-end OR a mid-task context switch) trigger the skill but require a single confirm question before running the wrap-up — see `트리거 후 컨텍스트 가드` section.
 ---
 
 # Session-end Wrap-up
@@ -9,11 +9,29 @@ description: Use this skill whenever the user signals the end of a working sessi
 
 ## 운영 원칙
 
-- **묻기 전에 점검부터.** 사용자가 "세션 종료" 라고 했을 때 가장 짜증나는 응답은 "어떻게 정리할까요?" 다. 기본 6단계를 수행한 뒤 *결과*만 보고하고, 의사결정이 필요한 시점에만 질문한다.
+- **묻기 전에 점검부터.** 사용자가 "세션 종료" 라고 했을 때 가장 짜증나는 응답은 "어떻게 정리할까요?" 다. 기본 7단계를 수행한 뒤 *결과*만 보고하고, 의사결정이 필요한 시점에만 질문한다.
 - **단계별 결과 요약**을 사용자에게 보여준다. 각 단계가 ✅/⚠️/❌ 중 무엇인지 한 줄씩.
 - **읽기 → 분석 → 제안 → 사용자 확인 → 실행** 순서. 자동 커밋·자동 push 같은 비가역 작업은 사용자 승인 후에만.
 - **존재하지 않는 파일/구조는 스킵.** `docs/superpowers/plans/PLANS-INDEX.md` 가 없는 프로젝트라면 3단계는 자동 생략하고 그렇게 보고한다. 강제 생성하지 않는다.
 - 결과가 짧으면 짧게, 길면 섹션 헤더로 정리. 정리 노트 자체를 작품화하지 않는다 — 다음 세션의 *입력 자료* 일 뿐이다.
+
+## 트리거 후 컨텍스트 가드 (over-action 방지)
+
+트리거 표현 일부는 *세션 단위 종료* 의도가 아니라 *현재 작업의 일시 중단·전환*을 가리킬 수 있다. wrap-up 7단계는 메모리·PLANS·핸드오프 노트까지 갱신하므로, 의도가 어긋난 채 진입하면 미완성 상태가 다음 세션의 *시작점*으로 잘못 박제된다.
+
+### 모호 트리거 매핑
+
+| 트리거 | 명확한 세션 종료 | 모호 — 확인 필요 |
+|---|---|---|
+| "세션 종료", "세션 종료한다", "세션 마무리", "세션 끝", "wrap up the session", "end session", "let's wrap up", "이번 세션 정리" | ✅ 즉시 진입 | — |
+| **"오늘은 여기까지"** | — | ⚠️ 직전 발화에 *진행 중 작업의 명시적 정리 신호* (예: "마지막 커밋 정리하고", "내일 이어서") 가 동반되지 않으면 **단일 확인 질문 후 진입**: "세션 종료 wrap-up 진행할까요? / 잠깐 자리 비우는 건가요?" |
+
+### 운영 규칙
+
+- 명확한 표현 → 7단계 즉시 진입.
+- 모호 표현이고 **직전 대화에 진행 중인 작업의 정리 신호가 없으면** → 한 줄 확인 질문 후 사용자가 session-end 의사를 밝힐 때만 진입. 자동 진입 금지.
+- 사용자가 "잠깐 자리 비움" 고르면 skill 종료. 메모리·PLANS·handoff에는 손대지 않는다.
+- 확인 질문은 **한 번만**.
 
 ## 7 단계 절차
 
