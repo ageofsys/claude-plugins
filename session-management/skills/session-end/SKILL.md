@@ -45,7 +45,11 @@ description: Use this skill whenever the user signals the end of a working sessi
 - 비밀/대용량/실수 commit 위험이 보이면(예: `.env`, 키, 빌드 산출물) 명시적으로 경고
 - **자동 커밋 금지** — 사용자가 동의하면 그때 실행
 
-산출: "변경 N건, 커밋 제안 메시지: ..." 또는 "정리할 변경 없음".
+환경 처리:
+- 비-git workspace → 보고 후 스킵 ("git 저장소 아님 — 커밋 단계 생략"). 다른 단계는 계속.
+- `git` 명령 실패 (예: `.git` 손상, 권한) → ⚠️ 보고 + 사용자에게 점검 권고. 다른 단계는 계속.
+
+산출: "변경 N건, 커밋 제안 메시지: ..." 또는 "정리할 변경 없음" 또는 "비-git — 스킵".
 
 ### 2. 새 결정/Issue 메모리 기록
 
@@ -58,20 +62,27 @@ description: Use this skill whenever the user signals the end of a working sessi
 - 새 파일은 `project_*.md` / `feedback_*.md` / `reference_*.md` 명명 규칙 따름. 프론트매터(name/description/type) 포함
 - 중복 제거 — 같은 사실이 여러 메모리에 흩어지면 통합
 
-산출: "새 메모리 N개, 기존 갱신 M개" + 파일 경로 리스트.
+환경 처리:
+- 메모리 디렉토리 없음 → `mkdir -p` 후 진행 (생성).
+- 디렉토리 생성 실패 (권한 등) → ❌ 보고 + 단계 건너뛰기. 인메모리 보고만 화면에 표시 — 디스크 저장은 사용자가 권한 해결 후 수동.
+
+산출: "새 메모리 N개, 기존 갱신 M개" + 파일 경로 리스트, 또는 "메모리 디렉토리 생성 실패 — 화면 보고만".
 
 ### 3. PLANS-INDEX 진척 갱신
 
 목표: 프로젝트의 작업 인덱스가 현실과 어긋나지 않게 한다.
 
 수행:
-- `docs/superpowers/plans/PLANS-INDEX.md` 존재 시 열기 (없으면 스킵, 보고)
+- `docs/superpowers/plans/PLANS-INDEX.md` 존재 시 열기
 - 이번 세션에서 완료된 플랜 → ✅ 마커
 - 이번 세션에서 *새로* 만든 플랜 → 인덱스에 항목 추가
 - 이전엔 ⬜ 였는데 부분 진행됨 → 진행 중 마커 + 짧은 비고
 - 가능한 한 변경 최소 — 인덱스가 진실의 출처
 
-산출: "PLANS-INDEX 변경 X줄" 또는 "변경 없음".
+환경 처리:
+- `PLANS-INDEX.md` 없음 → 스킵, 보고 ("PLANS 미사용 프로젝트 — 단계 생략"). **강제 생성 금지**.
+
+산출: "PLANS-INDEX 변경 X줄" 또는 "변경 없음" 또는 "PLANS 미사용 — 스킵".
 
 ### 4. 다음 세션 핸드오프 노트
 
@@ -105,6 +116,10 @@ description: Use this skill whenever the user signals the end of a working sessi
 - frontmatter 아래에 4a 본문
 - 사용자에게 인라인 표시 (지금 화면에 한 번)
 
+환경 처리:
+- 메모리 디렉토리 없음 → step 2의 `mkdir -p` 결과 의존. 그래도 없으면 ❌ 보고 후 단계 스킵 (인라인 표시는 유지).
+- 파일 쓰기 실패 (권한, 디스크) → ⚠️ 인라인 표시는 하되 frontmatter 추천명을 사용자에게 직접 노출. 다음 세션이 자동으로 회수하지 못함을 명시.
+
 산출: 메모리 파일 경로 + 인라인 표시 + 추천 세션명 1줄.
 
 ### 5. 백그라운드 프로세스/임시 자원 정리
@@ -117,7 +132,11 @@ description: Use this skill whenever the user signals the end of a working sessi
 - 영구 자원(큐 자체, 버킷 자체)은 **절대 삭제 금지** — purge 와 delete 를 혼동하지 않는다
 - 삭제할지 모호하면 묻는다
 
-산출: 정리한 임시 자원 리스트 + 보존된 영구 자원 명시.
+환경 처리:
+- 백그라운드 프로세스 추적 정보 없음 → 스킵 ("이번 세션에서 띄운 BG 없음").
+- 외부 자원 접근 실패 (AWS/cloud 권한, 네트워크) → ⚠️ 보고 + 사용자에게 결정 위임. 자동 재시도 X.
+
+산출: 정리한 임시 자원 리스트 + 보존된 영구 자원 명시, 또는 "정리할 자원 없음".
 
 ### 6. MEMORY.md 인덱스 갱신
 
@@ -130,7 +149,11 @@ description: Use this skill whenever the user signals the end of a working sessi
 - 항목 설명이 변경된 의미를 반영하지 못하면 갱신
 - **인덱스 자체는 콘텐츠 메모리가 아님** — 한 줄짜리 포인터만 유지
 
-산출: "인덱스 N줄 추가/M줄 변경" 또는 "갱신 불필요".
+환경 처리:
+- `MEMORY.md` 없으나 메모리 파일은 있음 → 인덱스 신규 생성 (한 줄/파일).
+- 메모리 디렉토리 자체가 없음 → 스킵 (step 2/4의 생성 결과에 의존). 보고만.
+
+산출: "인덱스 N줄 추가/M줄 변경" 또는 "갱신 불필요" 또는 "메모리 디렉토리 없음 — 스킵".
 
 ### 7. /rename 출력
 
@@ -149,6 +172,10 @@ description: Use this skill whenever the user signals the end of a working sessi
 - ✅ `#6 broadcast/mic LIVEKIT_CONNECT_FAILED n=2 재현 + R3 fix`
 - ✅ `Phase 1 grant/fencing 완료`
 - ✅ `3-DEVICE 재설계 + FE inventory zone 신규`
+
+환경 처리:
+- step 4c 가 실패해 frontmatter 에 추천명이 없으면 → 4b 의 인메모리 후보를 사용. 다음 세션이 자동으로 회수하지 못함을 명시.
+- 사용자가 이미 `/rename` 한 흔적 → 스킵 + "이미 명명됨" 보고.
 
 산출: `/rename <이름>` 한 줄. 또는 "이미 명명됨 — 스킵".
 

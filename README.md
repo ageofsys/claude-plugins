@@ -14,9 +14,11 @@ ageofsys의 개인용 [Claude Code](https://docs.claude.com/en/docs/claude-code)
 
 ## 제공 Plugins
 
-| Plugin | 설명 | 버전 |
-|---|---|---|
-| [`session-management`](./session-management) | 세션 시작/종료 시 자동으로 핸드오프·메모리·git·PLANS 상태를 정리하는 짝 스킬 | 0.2.0 |
+| Plugin | 설명 |
+|---|---|
+| [`session-management`](./session-management) | 세션 시작/종료 시 자동으로 핸드오프·메모리·git·PLANS 상태를 정리하는 짝 스킬 |
+
+버전은 각 plugin 의 `<plugin>/.claude-plugin/plugin.json` 에서 확인 (단일 진실의 출처).
 
 ## 저장소 구조
 

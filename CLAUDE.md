@@ -28,7 +28,7 @@
 3. `marketplace.json` 은 손대지 않는다 — 단, 플러그인의 `description` 이 카탈로그 노출용으로 바뀌어야 한다면 marketplace.json의 `description` 을 같이 갱신
 4. 가능하면 `<plugin>/CHANGELOG.md` 에 항목 추가
 5. 같은 커밋에 묶어서 push
-6. `README.md` 의 "제공 Plugins" 표에 노출되는 버전/설명도 일치시킬 것
+6. `README.md` 의 "제공 Plugins" 표는 *버전을 표시하지 않는다* — 버전 SSOT 는 `plugin.json` 한 곳. `description` 변경이라면 그것만 동기화.
 
 ## 2. marketplace.json 엔트리 작성 규칙
 
@@ -52,7 +52,11 @@
 
 플러그인 내부 컴포넌트는 표준 디렉토리에 배치한다: `skills/`, `commands/`, `agents/`, `hooks/` (자세한 레이아웃은 루트 `README.md` 참조).
 
-## 4. 새 플러그인 추가 절차
+## 4. 행동 회귀 검사
+
+각 plugin 안의 SKILL.md 의 *trigger / step / anti-pattern / degradation* 섹션을 손대면, 그 plugin 의 `docs/behavior-cases.md` (있으면) 의 해당 케이스를 함께 갱신할지 점검한다. 이 문서가 자동 eval 도입 전 단계의 수동 회귀 검사 자료다. (예: `session-management/docs/behavior-cases.md`)
+
+## 5. 새 플러그인 추가 절차
 
 1. `<new-plugin>/` 디렉토리 생성
 2. `<new-plugin>/.claude-plugin/plugin.json` 작성 — `name`, `version`(`0.1.0` 시작), `description`, `author`, `license`, `keywords` 포함

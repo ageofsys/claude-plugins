@@ -47,6 +47,11 @@ description: Use this skill whenever the user signals the start of a working ses
 - frontmatter 의 `recommended_session_name` 이 있으면 회수 — step 6 브리핑에서 "**지난 핸드오프 추천명:** `<name>`" 으로 표시. 이는 **실제 세션명이 아니다** — assistant 가 사용자의 `/rename` 실행 여부를 보장 못 하므로 *추천명* 임을 명시.
 - 같은 토픽의 다른 `project_*.md` 도 훑어 *결정/제약*이 살아 있는지 확인 (특히 "보류", "TODO", "다음 세션에" 표현)
 
+환경 처리:
+- `MEMORY.md` 없음 → 보고 ("메모리 인덱스 없음 — 첫 세션이거나 초기화 필요"). 강제 생성 X.
+- 핸드오프 파일 없음 → 보고 ("핸드오프 없음 — MEMORY.md 만 참조"). 강제 생성 X.
+- frontmatter 가 없거나 `recommended_session_name` 키 부재 → 추천명 줄 생략. 본문 회수는 그대로 진행.
+
 산출: "최근 핸드오프: `project_handoff_<topic>.md` — 다음 시작점: …" + (선택) "지난 핸드오프 추천명: `<name>`", 또는 "핸드오프 없음, MEMORY.md 만 참조".
 
 ### 2. Git 상태 점검
@@ -59,19 +64,26 @@ description: Use this skill whenever the user signals the start of a working ses
 - 현재 브랜치 명시 (예: `livekit-azure`). 시스템 컨텍스트의 git 상태와 비교해 *분기 또는 누락된 커밋이 있는지* 감지
 - 핸드오프엔 "정리된 상태" 인데 잔류 변경이 있으면 ⚠️ 로 보고 — 다른 환경에서의 변경일 수 있음
 
-산출: "브랜치: X, 미커밋 N건, 마지막 커밋: …" + 정합성 한 줄.
+환경 처리:
+- 비-git workspace → 보고 후 스킵 ("git 저장소 아님 — 정합성 비교 생략"). 다른 단계는 계속.
+- `git` 명령 실패 → ⚠️ 보고 + 다른 단계 계속. 사용자에게 점검 권고.
+
+산출: "브랜치: X, 미커밋 N건, 마지막 커밋: …" + 정합성 한 줄, 또는 "비-git — 스킵".
 
 ### 3. PLANS-INDEX 다음 작업 식별
 
 목표: "다음에 무엇을 할지"를 인덱스에서 자동 추론한다.
 
 수행:
-- `docs/superpowers/plans/PLANS-INDEX.md` 존재 시 열기 (없으면 스킵, 보고)
+- `docs/superpowers/plans/PLANS-INDEX.md` 존재 시 열기
 - 첫 번째 `⬜ 미작성` 또는 `🟡 진행중` 항목 찾기
 - 핸드오프의 "다음 시작점" 과 PLANS-INDEX 의 다음 항목이 **일치하는지** 교차 검증
   - 일치 → ✅ 그 항목을 시작점으로 제시
   - 어긋남 → ⚠️ 두 후보를 모두 보여주고 사용자에게 선택 요청
 - 신규 플랜이 필요해 보이면 (`session-end` 시 인덱스에 등록된 빈 항목 등) `superpowers:writing-plans` 스킬을 사용자에게 권유
+
+환경 처리:
+- `PLANS-INDEX.md` 없음 → 스킵, 핸드오프만 사용 ("PLANS 미사용 — 핸드오프 기준"). **강제 생성 금지**.
 
 산출: "다음 후보 플랜: `<plan-id> — <title>` (status: ⬜/🟡)" 또는 "PLANS-INDEX 없음 — 핸드오프만 사용".
 
@@ -85,7 +97,11 @@ description: Use this skill whenever the user signals the start of a working ses
 - 모두 다운된 상태이면 사용자에게 "**`docker compose up -d` 실행할까요?**" 단일 질문 — 자동 실행 금지
 - 환경 검증 자체가 작업 의도가 아니라면 ✅/⚠️ 만 남기고 진행
 
-산출: "로컬 인프라: ✅ 모두 up / ⚠️ 일부 down (재기동 제안)".
+환경 처리:
+- CLAUDE.md 없음 또는 인프라 명령 미명시 → 일반 점검만 시도. 결과 모호하면 ⚠️ + 사용자 확인.
+- `docker` / `lsof` 등 명령 자체가 없는 환경 → 보고 후 스킵 ("로컬 인프라 사용 안 함 또는 점검 도구 없음").
+
+산출: "로컬 인프라: ✅ 모두 up / ⚠️ 일부 down (재기동 제안)" 또는 "점검 대상 없음".
 
 ### 5. 미해결 결정/Issue 환기
 
@@ -95,6 +111,9 @@ description: Use this skill whenever the user signals the start of a working ses
 - 메모리(`feedback_*.md` / `project_*.md`) 에서 "보류", "TODO", "다음 세션에", "추후 결정" 같은 표현 검색
 - 핸드오프 노트의 **주의사항/블록커** 섹션이 있으면 인용
 - "이번 세션에서 다룰지 / 계속 보류" 를 사용자에게 한 번 묻는 항목으로 정리 (자동 결정 금지)
+
+환경 처리:
+- 메모리 디렉토리 자체가 없음 → step 1 결과 재사용. 핸드오프도 없으면 "환기할 항목 없음" 보고.
 
 산출: "환기할 미해결 항목 N건" 또는 "없음".
 
@@ -106,6 +125,9 @@ description: Use this skill whenever the user signals the start of a working ses
 - 아래 "시작 브리핑 형식" 으로 단일 메시지 출력
 - 마지막 줄에 **"다음 작업으로 진입할까요? (y / 다른 지시)"** 한 줄 — 사용자의 confirm 또는 redirect 를 기다림
 - 사용자가 redirect 하면 그 의도를 따르되, 1~3 단계의 요약은 살린 채 진입
+
+환경 처리:
+- 다른 단계가 모두 ❌ 라도 브리핑 자체는 항상 출력 — 한 줄짜리라도 사용자에게 *현 상태 인식* 을 전달.
 
 산출: 브리핑 메시지.
 
