@@ -75,16 +75,37 @@ description: Use this skill whenever the user signals the end of a working sessi
 
 ### 4. 다음 세션 핸드오프 노트
 
-목표: 다음 세션을 처음 여는 시점에 "어디부터 시작할지"가 즉시 보이게 한다.
+목표: 다음 세션을 처음 여는 시점에 "어디부터 시작할지"가 즉시 보이게 한다. 동시에 step 7의 추천 세션명을 *지금* 계산하여 frontmatter에 박아 둔다 — 다음 세션이 그 추천명을 그대로 회수해서 "지난 핸드오프 추천명"으로 표시할 수 있게.
+
+#### 4a. 노트 본문 작성
 
 수행:
 - 이번 세션의 *결과* (한두 줄), 다음 세션의 *시작점* (한두 줄), *주의사항/블록커* 가 있으면 추가
-- 위치는 두 곳:
-  - `memory/project_handoff_<session-topic>.md` — 메모리에 저장 (다음 세션이 읽음)
-  - 사용자에게 표시 (지금 화면에 한 번)
-- 핸드오프 노트는 너무 길게 쓰지 않는다 — 100~300자가 이상적
+- 본문은 너무 길게 쓰지 않는다 — 100~300자가 이상적
 
-산출: 메모리 파일 경로 + 인라인 표시.
+#### 4b. 추천 세션명 후보 계산 (step 7과 공유)
+
+수행:
+- 이번 세션 대화·노트 본문의 어휘를 기준으로 추천 세션명 1개 (선호) ~ 3개 (대안 포함) 생성
+- 형식 가이드는 step 7 의 *이름 형식 예시* 와 동일
+- 사용자가 이미 `/rename` 한 흔적이 보이면 그 이름을 추천명으로 사용 (재계산 X) — step 7 도 스킵
+
+#### 4c. 핸드오프 파일 생성
+
+수행:
+- 위치: `memory/project_handoff_<session-topic>.md`
+- 파일 frontmatter:
+  ```yaml
+  ---
+  recommended_session_name: <4b의 1순위>
+  alternative_names: [<대안 1>, <대안 2>]   # 선택 — 0~2개
+  ended_at: <ISO 8601 종료 시각>
+  ---
+  ```
+- frontmatter 아래에 4a 본문
+- 사용자에게 인라인 표시 (지금 화면에 한 번)
+
+산출: 메모리 파일 경로 + 인라인 표시 + 추천 세션명 1줄.
 
 ### 5. 백그라운드 프로세스/임시 자원 정리
 
@@ -111,27 +132,25 @@ description: Use this skill whenever the user signals the end of a working sessi
 
 산출: "인덱스 N줄 추가/M줄 변경" 또는 "갱신 불필요".
 
-### 7. 세션 이름 점검 + 추천
+### 7. /rename 출력
 
-목표: 미래에 이 세션을 *키워드 검색* 으로 다시 찾을 수 있게 한다. Claude Code 가 자동 부여한 세션명은 첫 메시지 기반의 generic 한 이름이 되기 쉬워, 의도적으로 핸드오프 어휘와 정렬한 명을 부여한다.
+목표: step 4c 에서 frontmatter 에 박아 둔 추천 세션명을 사용자에게 슬래시 명령 한 줄로 제시한다. **재계산하지 않는다** — 후보는 4b 에서 한 번만 만든다.
 
 수행:
-- 이번 세션 대화·핸드오프 노트의 어휘를 기준으로 추천 세션명 1개 (선호) ~ 3개 (대안 포함) 생성
-- 형식 가이드:
-  - 길이 60자 이내 — 검색·세션 리스트에서 한눈에 들어옴
-  - 우선 키워드 (조합): (a) 작업 ID/번호 (`#6`, `R3`, `P14` 등), (b) 핵심 도메인 (`broadcast/mic`, `eligibility`, `device-lifecycle`), (c) 결과 동사 (`재현`, `fix`, `조사`, `완료`)
-  - 핸드오프 노트 제목과 어휘 일치 — 미래에 두 자료 cross-reference 가 자연스럽다
-- 사용자에게 추천명 + `/rename <추천명>` 명령 한 줄을 제시 (자동 적용 X — `/rename` 은 슬래시 명령이라 Claude 가 직접 실행 못 함)
+- step 4c 의 `recommended_session_name` 을 그대로 사용 — `/rename <이름>` 형태로 출력
+- 자동 적용 X — `/rename` 은 슬래시 명령이라 Claude 가 직접 실행 못 함
 - 사용자가 이번 세션 중 이미 `/rename` 한 흔적이 보이면 (대화에 `<command-name>/rename</command-name>` 등) 단계 스킵 + 보고
 
-이름 형식 예시:
+이름 형식 예시 (4b 계산 시 적용한 기준 — 참조용):
+- 길이 60자 이내 — 검색·세션 리스트에서 한눈에 들어옴
+- 우선 키워드 (조합): (a) 작업 ID/번호 (`#6`, `R3`, `P14` 등), (b) 핵심 도메인 (`broadcast/mic`, `eligibility`, `device-lifecycle`), (c) 결과 동사 (`재현`, `fix`, `조사`, `완료`)
 - ❌ "디버깅 작업", "버그 수정", "오늘 한 일 정리" — 검색 키워드 약함
 - ❌ "세션 마무리" — 의미 없음
-- ✅ `#6 broadcast/mic LIVEKIT_CONNECT_FAILED n=2 재현 + R3 fix` — 작업ID + 도메인 + 결과 동사 + 정량
-- ✅ `Phase 1 grant/fencing 완료` — 단위작업 + 결과
-- ✅ `3-DEVICE 재설계 + FE inventory zone 신규` — 다중 작업 OR
+- ✅ `#6 broadcast/mic LIVEKIT_CONNECT_FAILED n=2 재현 + R3 fix`
+- ✅ `Phase 1 grant/fencing 완료`
+- ✅ `3-DEVICE 재설계 + FE inventory zone 신규`
 
-산출: "추천 세션명: `<이름>`" + `/rename <이름>` 한 줄. 또는 "이미 명명됨 — 스킵".
+산출: `/rename <이름>` 한 줄. 또는 "이미 명명됨 — 스킵".
 
 ## 마무리 보고 형식
 

@@ -44,9 +44,10 @@ description: Use this skill whenever the user signals the start of a working ses
 - `~/.claude/projects/<sanitized-cwd>/memory/MEMORY.md` 의 인덱스 확인 (대부분 시스템 컨텍스트로 이미 주입되어 있음)
 - 가장 최근 `project_handoff_*.md` 식별 (파일명 날짜·`mtime` 기준)
 - 핸드오프 노트의 **이번 세션 결과 / 다음 시작점 / 주의사항** 세 줄 추출
+- frontmatter 의 `recommended_session_name` 이 있으면 회수 — step 6 브리핑에서 "**지난 핸드오프 추천명:** `<name>`" 으로 표시. 이는 **실제 세션명이 아니다** — assistant 가 사용자의 `/rename` 실행 여부를 보장 못 하므로 *추천명* 임을 명시.
 - 같은 토픽의 다른 `project_*.md` 도 훑어 *결정/제약*이 살아 있는지 확인 (특히 "보류", "TODO", "다음 세션에" 표현)
 
-산출: "최근 핸드오프: `project_handoff_<topic>.md` — 다음 시작점: …" 또는 "핸드오프 없음, MEMORY.md 만 참조".
+산출: "최근 핸드오프: `project_handoff_<topic>.md` — 다음 시작점: …" + (선택) "지난 핸드오프 추천명: `<name>`", 또는 "핸드오프 없음, MEMORY.md 만 참조".
 
 ### 2. Git 상태 점검
 
@@ -115,6 +116,8 @@ description: Use this skill whenever the user signals the start of a working ses
 ```
 ## 세션 시작 브리핑
 
+지난 핸드오프 추천명: `<name>` (frontmatter 있을 때만 — 실제 세션명이 아닌 추천명)
+
 | 단계 | 결과 |
 |---|---|
 | 1. 핸드오프 | ✅/⚠️/❌ + 한 줄 (다음 시작점) |
@@ -129,6 +132,8 @@ description: Use this skill whenever the user signals the start of a working ses
 
 다음 작업으로 진입할까요?
 ```
+
+`지난 핸드오프 추천명` 줄은 frontmatter 의 `recommended_session_name` 이 있을 때만 출력. 추천명이 곧 *현재 세션의 실제 이름이라는 의미는 아니다* — 사용자가 `/rename` 을 실행했는지 assistant 는 확인할 수 없으므로, 라벨에 "추천명" 표현을 유지한다.
 
 ## 안티패턴 (피할 것)
 
@@ -146,11 +151,12 @@ description: Use this skill whenever the user signals the start of a working ses
 
 | session-end 산출 | session-start 입력 |
 |---|---|
-| `project_handoff_*.md` (다음 시작점) | 1단계 — 가장 먼저 읽음 |
+| `project_handoff_*.md` (본문 — 다음 시작점) | 1단계 — 가장 먼저 읽음 |
+| `project_handoff_*.md` frontmatter `recommended_session_name` | 1단계 회수 → 6단계 브리핑 "지난 핸드오프 추천명" |
 | 새/갱신된 `project_*.md` / `feedback_*.md` | 1단계 — 결정/제약 환기 |
 | 갱신된 `PLANS-INDEX.md` | 3단계 — 다음 후보 플랜 |
 | 커밋된 변경 / 정리된 미커밋 | 2단계 — 정합성 비교 |
 | 정리된 임시 자원 / 종료된 백그라운드 프로세스 | 4단계 — 빈 상태 가정으로 시작 |
 | 갱신된 `MEMORY.md` 인덱스 | 1단계 — 시스템 컨텍스트로 자동 주입 |
 
-두 스킬은 같은 *세션 경계 인터페이스* 를 공유한다. 한쪽이 빠지면 다른 쪽의 가치가 절반 이하로 떨어진다.
+두 스킬은 같은 *세션 경계 인터페이스* 를 공유한다. 한쪽이 빠지면 다른 쪽의 가치가 절반 이하로 떨어진다. 추천명은 session-end step 4c 에서 frontmatter 에 박아 두므로, session-start 가 별도 계산 없이 그대로 회수해서 표시한다 — assistant 가 실제 `/rename` 실행을 보장 못 한다는 비대칭이 라벨에 그대로 노출된다.
