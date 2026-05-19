@@ -111,8 +111,14 @@ description: Use this skill whenever the user signals the end of a working sessi
   recommended_session_name: <4b의 1순위>
   alternative_names: [<대안 1>, <대안 2>]   # 선택 — 0~2개
   ended_at: <ISO 8601 종료 시각>
+  git_state:                                 # git workspace 일 때만 — 비-git이면 블록 통째 생략
+    branch: <git symbolic-ref --short -q HEAD || "(detached:<sha7>)">
+    commit: <git rev-parse HEAD>             # full SHA — 대조 전용
+    commit_subject: <git log -1 --format=%s, 50자 이내>   # 표시 전용, 판정 금지
+    worktree_root: <git rev-parse --show-toplevel>        # 절대경로
   ---
   ```
+- `git_state` 4필드를 위 주석의 git 명령으로 채운다. 비-git workspace 면 `git_state` 블록을 통째 생략한다 (빈 값·placeholder 금지). detached HEAD 면 `branch` 를 `(detached:<sha7>)` 로 기록한다.
 - frontmatter 아래에 4a 본문
 - 사용자에게 인라인 표시 (지금 화면에 한 번)
 
@@ -191,7 +197,7 @@ description: Use this skill whenever the user signals the end of a working sessi
 | 1. 커밋 | ✅/⚠️/❌ + 한 줄 |
 | 2. 메모리 | ✅/⚠️/❌ + 한 줄 |
 | 3. PLANS-INDEX | ✅/⚠️/❌ + 한 줄 |
-| 4. 핸드오프 | ✅ + 다음 시작점 한 줄 |
+| 4. 핸드오프 | ✅ + 다음 시작점 한 줄 + git_state(branch/commit(7자)/wt) 또는 "git_state 생략(비-git)" |
 | 5. 임시 자원 | ✅/⚠️/❌ + 한 줄 |
 | 6. MEMORY.md | ✅/⚠️/❌ + 한 줄 |
 | 7. 세션명 | ✅/⚠️ + `/rename <추천명>` 한 줄 (또는 이미 명명됨 표시) |
