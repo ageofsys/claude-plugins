@@ -93,6 +93,14 @@ description: Use this skill whenever the user signals the end of a working sessi
 수행:
 - 이번 세션의 *결과* (한두 줄), 다음 세션의 *시작점* (한두 줄), *주의사항/블록커* 가 있으면 추가
 - 본문은 너무 길게 쓰지 않는다 — 100~300자가 이상적
+- 이번 세션에 *실제로 시도했으나 폐기된 접근*(dead-end)이 있으면 본문 단락 뒤에 조건부 서브섹션을 둔다. 없으면 서브섹션 통째 생략 (존재하지 않는 구조는 만들지 않는다):
+
+  ```
+  ## 시도했으나 안 된 것
+  - <접근> → <왜 막혔는지>
+  ```
+
+  이 서브섹션은 본문 100~300자 예산과 *별개*로 ≤200자, 항목당 1줄. 다음 세션이 같은 막힌 길을 재시도하지 않게 하는 것이 목적.
 
 #### 4b. 추천 세션명 후보 계산 (step 7과 공유)
 
@@ -197,7 +205,7 @@ description: Use this skill whenever the user signals the end of a working sessi
 | 1. 커밋 | ✅/⚠️/❌ + 한 줄 |
 | 2. 메모리 | ✅/⚠️/❌ + 한 줄 |
 | 3. PLANS-INDEX | ✅/⚠️/❌ + 한 줄 |
-| 4. 핸드오프 | ✅ + 다음 시작점 한 줄 + git_state(branch/commit(7자)/wt) 또는 "git_state 생략(비-git)" |
+| 4. 핸드오프 | ✅ + 다음 시작점 + git_state(branch/commit(7자)/wt) 또는 "git_state 생략(비-git)" + dead-end N건 기록/없음 |
 | 5. 임시 자원 | ✅/⚠️/❌ + 한 줄 |
 | 6. MEMORY.md | ✅/⚠️/❌ + 한 줄 |
 | 7. 세션명 | ✅/⚠️ + `/rename <추천명>` 한 줄 (또는 이미 명명됨 표시) |
