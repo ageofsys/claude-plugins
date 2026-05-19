@@ -44,6 +44,7 @@ description: Use this skill whenever the user signals the start of a working ses
 - `~/.claude/projects/<sanitized-cwd>/memory/MEMORY.md` 의 인덱스 확인 (대부분 시스템 컨텍스트로 이미 주입되어 있음)
 - 가장 최근 `project_handoff_*.md` 식별 (파일명 날짜·`mtime` 기준)
 - 핸드오프 노트의 **이번 세션 결과 / 다음 시작점 / 주의사항** 세 줄 추출
+- 핸드오프 본문에 `## 시도했으나 안 된 것` 서브섹션이 있으면 회수 (step 6 브리핑 `재시도 금지 접근` 행 + 제안 시작점 반영). 부재 시 줄 생략 (`recommended_session_name` 부재 처리와 동일 패턴). step 5("미해결 항목 환기")에 fold 하지 않는다 — "미해결 환기"와 "재시도 방지"는 행동 효과가 다르다
 - frontmatter 의 `recommended_session_name` 이 있으면 회수 — step 6 브리핑에서 "**지난 핸드오프 추천명:** `<name>`" 으로 표시. 이는 **실제 세션명이 아니다** — assistant 가 사용자의 `/rename` 실행 여부를 보장 못 하므로 *추천명* 임을 명시.
 - 같은 토픽의 다른 `project_*.md` 도 훑어 *결정/제약*이 살아 있는지 확인 (특히 "보류", "TODO", "다음 세션에" 표현)
 
@@ -141,6 +142,8 @@ description: Use this skill whenever the user signals the start of a working ses
 
 6 단계 끝에 다음 형식의 단일 메시지를 남긴다:
 
+브리핑 표의 행 번호(1~7)는 *표시 순서*이며, "## 6 단계 절차"의 step 번호와 무관하다. 절차는 6단계 그대로다.
+
 ```
 ## 세션 시작 브리핑
 
@@ -153,13 +156,16 @@ description: Use this skill whenever the user signals the start of a working ses
 | 3. PLANS-INDEX | ✅/⚠️/❌ + 다음 후보 플랜 |
 | 4. 로컬 인프라 | ✅/⚠️/❌ + 한 줄 |
 | 5. 미해결 항목 | ✅/⚠️ + 환기할 N건 |
-| 6. 진입 준비 | ✅ |
+| 6. 재시도 금지 접근 | ⚠️ M건 / — (이전 세션 dead-end) |
+| 7. 진입 준비 | ✅ |
 
 **제안 시작점:** <한 문장>
 **선택지:** (1) 제안대로 진행 (2) 다른 작업으로 redirect (3) 보류 결정 먼저 정리
 
 다음 작업으로 진입할까요?
 ```
+
+dead-end 가 회수되면 제안 시작점에 "이미 막힌 접근(<요약>) 재시도 금지" 를 명시한다.
 
 `지난 핸드오프 추천명` 줄은 frontmatter 의 `recommended_session_name` 이 있을 때만 출력. 추천명이 곧 *현재 세션의 실제 이름이라는 의미는 아니다* — 사용자가 `/rename` 을 실행했는지 assistant 는 확인할 수 없으므로, 라벨에 "추천명" 표현을 유지한다.
 
@@ -187,5 +193,6 @@ description: Use this skill whenever the user signals the start of a working ses
 | 정리된 임시 자원 / 종료된 백그라운드 프로세스 | 4단계 — 빈 상태 가정으로 시작 |
 | 갱신된 `MEMORY.md` 인덱스 | 1단계 — 시스템 컨텍스트로 자동 주입 |
 | frontmatter `git_state` (4필드) | 2단계 — 필드별 결정론 대조 + 우선순위 라벨 + 분기 시 제안 문자열 |
+| 본문 `## 시도했으나 안 된 것` | 1단계 회수 → 6단계 브리핑 `재시도 금지 접근` 행 + 제안 시작점 반영 |
 
 두 스킬은 같은 *세션 경계 인터페이스* 를 공유한다. 한쪽이 빠지면 다른 쪽의 가치가 절반 이하로 떨어진다. 추천명은 session-end step 4c 에서 frontmatter 에 박아 두므로, session-start 가 별도 계산 없이 그대로 회수해서 표시한다 — assistant 가 실제 `/rename` 실행을 보장 못 한다는 비대칭이 라벨에 그대로 노출된다.

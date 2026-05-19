@@ -135,6 +135,8 @@ CLAUDE.md 와 함께 읽을 것. 새 케이스는 발견되는 대로 추가한�
 | stored commit 이 현재 HEAD 의 ancestor | 2 | 정보: 이후 N commits 진행 (정상 경로) |
 | 현재 HEAD 가 stored commit 보다 behind | 2 | ⚠️ stale checkout/미-pull |
 | stored commit 과 diverged | 2 | ⚠️ force-push/rebase/분기 가능성 |
+| `## 시도했으나 안 된 것` 서브섹션 부재 | 1, 6 | step 1 회수 줄 생략, step 6 브리핑 `재시도 금지 접근` 행 `—` 표시 |
+| dead-end 서브섹션 존재 | 1, 6 | step 1 회수 → step 6 브리핑 `재시도 금지 접근` 행 ⚠️ M건, 제안 시작점에 "이미 막힌 접근 재시도 금지" 명시 |
 
 ### 3.2 session-end
 
