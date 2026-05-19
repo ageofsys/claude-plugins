@@ -1,6 +1,6 @@
 {
   "name": "session-management",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "세션 시작/종료 시 자동으로 핸드오프·메모리·git·PLANS 상태를 정리하는 짝 스킬",
   "author": {
     "name": "ageofsys",
