@@ -56,19 +56,25 @@ description: Use this skill whenever the user signals the start of a working ses
 
 ### 2. Git 상태 점검
 
-목표: 이전 세션 종료 시점과 현재 작업 트리가 어긋나 있지 않은지 확인한다.
+목표: 이전 세션 종료 시점과 현재 작업 트리가 어긋나 있지 않은지 *결정론적으로* 확인한다.
 
 수행:
 - `git status -s` — 미커밋 잔류 변경 점검 (있으면 *왜 남아 있는지*가 핸드오프에 적혀 있어야 정상)
 - `git log -5 --oneline` — 마지막 커밋들이 핸드오프와 일치하는지 확인
-- 현재 브랜치 명시 (예: `livekit-azure`). 시스템 컨텍스트의 git 상태와 비교해 *분기 또는 누락된 커밋이 있는지* 감지
-- 핸드오프엔 "정리된 상태" 인데 잔류 변경이 있으면 ⚠️ 로 보고 — 다른 환경에서의 변경일 수 있음
+- 핸드오프 frontmatter 의 `git_state` 회수 후 현재 `git rev-parse` 결과와 필드별 대조:
+  - **worktree_root** — `cd` 제안은 3조건 AND 일 때만: ① `[ -d <stored_root> ]` ② `git -C <stored_root> rev-parse --show-toplevel` 성공 ③ 그 결과 == 저장된 `worktree_root`. 셋 다 만족 → `cd <stored_root>` 제안 문자열(비실행). 하나라도 실패 → `cd` 제안 *없이* "경로는 있으나 git worktree 확인 실패" 또는 "현재 머신에 없음" 보고
+  - **branch** — 불일치 → ⚠️ + `git checkout <stored branch>` 제안 문자열(비실행). `branch` 가 `(detached:…)` → `git checkout` 제안 *금지* + "이전 세션 detached 상태" 별도 주의
+  - **commit** — `git cat-file -e <stored_commit>` + `git merge-base --is-ancestor` 로 4분류: (a) 로컬에 없음 → ⚠️ 미-fetch/다른 머신/다른 repo 가능 (b) stored 가 현재 HEAD 의 ancestor (= 현재 HEAD 가 ahead) → 정보: 이후 N commits 진행(정상) (c) 현재 HEAD 가 behind → ⚠️ stale checkout/미-pull (d) diverged → ⚠️ force-push/rebase/분기 가능성. **"정상일 수 있음" 식 뭉개기 금지**. `commit_subject` 는 표시 전용 — 절대 판정에 쓰지 않는다
+- 출력 우선순위 (모든 신호 보고하되 종합 라벨 결정 순서): ① worktree invalid/mismatch ② branch mismatch/detached ③ commit missing/behind/diverged/ahead. `정상` 라벨은 worktree 와 branch 가 *모두* 안전할 때만 부여 (commit ahead/behind/diverged 여도 worktree+branch 안전하면 라벨은 정상, ⚠️ 신호는 별도 표시)
+- 자동 git 조작(`checkout`/`cd` 실행) 절대 금지 — `/rename`·PLANS-불일치 선례와 동일하게 *제안 문자열까지만*
 
 환경 처리:
 - 비-git workspace → 보고 후 스킵 ("git 저장소 아님 — 정합성 비교 생략"). 다른 단계는 계속.
 - `git` 명령 실패 → ⚠️ 보고 + 다른 단계 계속. 사용자에게 점검 권고.
+- `git_state` 블록 부재 (0.3.0 구버전 핸드오프 — 비-git은 위 "비-git workspace" 처리로 이미 스킵) → 기존 모호 비교 legacy fallback + "git_state 없음 — 정합성 대조 생략" 보고. 강제 생성·합성 금지.
+- `git_state` 블록은 있으나 일부 필드 부재/파싱 실패 → 해당 필드만 "대조 불가" 보고, 나머지 필드는 정상 대조 (블록 전체 fallback 아님).
 
-산출: "브랜치: X, 미커밋 N건, 마지막 커밋: …" + 정합성 한 줄, 또는 "비-git — 스킵".
+산출: "브랜치: X, 미커밋 N건, 마지막 커밋: …" + git_state 대조 라벨/신호 한 줄(분기 시 제안 문자열 포함), 또는 "비-git — 스킵" / "git_state 없음 — 대조 생략".
 
 ### 3. PLANS-INDEX 다음 작업 식별
 
@@ -143,7 +149,7 @@ description: Use this skill whenever the user signals the start of a working ses
 | 단계 | 결과 |
 |---|---|
 | 1. 핸드오프 | ✅/⚠️/❌ + 한 줄 (다음 시작점) |
-| 2. Git | ✅/⚠️/❌ + 브랜치/미커밋/최근 커밋 |
+| 2. Git | ✅/⚠️/❌ + 브랜치/미커밋/최근 커밋 + git_state 대조(worktree→branch→commit 우선순위, 분기 시 제안 문자열) |
 | 3. PLANS-INDEX | ✅/⚠️/❌ + 다음 후보 플랜 |
 | 4. 로컬 인프라 | ✅/⚠️/❌ + 한 줄 |
 | 5. 미해결 항목 | ✅/⚠️ + 환기할 N건 |
@@ -180,5 +186,6 @@ description: Use this skill whenever the user signals the start of a working ses
 | 커밋된 변경 / 정리된 미커밋 | 2단계 — 정합성 비교 |
 | 정리된 임시 자원 / 종료된 백그라운드 프로세스 | 4단계 — 빈 상태 가정으로 시작 |
 | 갱신된 `MEMORY.md` 인덱스 | 1단계 — 시스템 컨텍스트로 자동 주입 |
+| frontmatter `git_state` (4필드) | 2단계 — 필드별 결정론 대조 + 우선순위 라벨 + 분기 시 제안 문자열 |
 
 두 스킬은 같은 *세션 경계 인터페이스* 를 공유한다. 한쪽이 빠지면 다른 쪽의 가치가 절반 이하로 떨어진다. 추천명은 session-end step 4c 에서 frontmatter 에 박아 두므로, session-start 가 별도 계산 없이 그대로 회수해서 표시한다 — assistant 가 실제 `/rename` 실행을 보장 못 한다는 비대칭이 라벨에 그대로 노출된다.

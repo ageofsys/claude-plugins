@@ -69,6 +69,8 @@ CLAUDE.md 와 함께 읽을 것. 새 케이스는 발견되는 대로 추가한�
 | `npm run dev` 등 dev server 자동 기동 | 동일 — confirm 후만 |
 | `/rename <name>` 시도 (tool 호출 또는 슬래시 명령으로) | 출력은 *문자열 1줄* 로만 — 사용자가 수동 실행 |
 | `git_state` 에 placeholder/빈 값 강제 주입 (비-git인데) | 블록 자체를 생략 — 값을 지어내지 않음 |
+| 분기 감지 시 `git checkout` / `cd` 자동 실행 | 제안 문자열만, 실행은 사용자 |
+| detached HEAD 에 `git checkout` 제안 | 금지 — "detached 상태" 주의만 |
 
 ### 2.2 영구 자원 삭제 금지
 
@@ -95,6 +97,8 @@ CLAUDE.md 와 함께 읽을 것. 새 케이스는 발견되는 대로 추가한�
 | 메모리를 무비판적으로 인용 (1~2주 지난 내용) | 의심되면 코드/git 으로 *검증 후* 인용. stale 발견 시 수정 |
 | session-end 가 정리한 임시 자원을 session-start 에서 자동 재생성 | 빈 상태 가정으로 시작 — 재생성 X |
 | 추천 세션명을 "현재 세션명" 처럼 표시 | "지난 핸드오프 추천명" 라벨로 표시 — 실제 `/rename` 실행 여부 미확인 |
+| `git_state` 불일치를 브리핑에서 숨김 | ⚠️ 명시 + 제안 문자열 노출 |
+| commit-only 불일치를 "정상" 으로 뭉갬 | ancestry 4분류로 신호 보고 (`정상` 라벨은 worktree+branch 모두 안전할 때만) |
 
 ### 2.5 보고 누락 금지
 
@@ -122,6 +126,15 @@ CLAUDE.md 와 함께 읽을 것. 새 케이스는 발견되는 대로 추가한�
 | `docker` / `lsof` 없음 | 4 | 스킵 ("점검 도구 없음") |
 | 메모리 디렉토리 자체 부재 | 5 | step 1 결과 재사용, 환기할 항목 없음 보고 |
 | 모든 단계 ❌ | 6 | 한 줄 브리핑이라도 항상 출력 |
+| `git_state` 블록 부재 (0.3.0 구버전 핸드오프 — git repo는 존재) | 2 | legacy 모호 비교 fallback + "git_state 없음 — 정합성 대조 생략" 보고 |
+| `git_state` 일부 필드 부재/파싱 실패 | 2 | 해당 필드만 "대조 불가" 보고, 나머지 필드는 정상 대조 (블록 전체 fallback 아님) |
+| worktree_root 3조건 검증 실패 (경로없음/git -C 실패/결과≠저장값) | 2 | `cd` 제안 없이 "현재 머신에 없음/worktree 확인 실패" 보고 |
+| branch 불일치 | 2 | ⚠️ + `git checkout <stored branch>` 제안 문자열(비실행) |
+| branch = (detached:…) | 2 | `git checkout` 제안 금지 + 브리핑에 "이전 세션 detached 상태" 주의 |
+| stored commit 로컬에 없음 | 2 | ⚠️ 미-fetch/다른 머신/다른 repo 가능 |
+| stored commit 이 현재 HEAD 의 ancestor | 2 | 정보: 이후 N commits 진행 (정상 경로) |
+| 현재 HEAD 가 stored commit 보다 behind | 2 | ⚠️ stale checkout/미-pull |
+| stored commit 과 diverged | 2 | ⚠️ force-push/rebase/분기 가능성 |
 
 ### 3.2 session-end
 
